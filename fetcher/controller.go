@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"log/slog"
+	"time"
 
 	smartmeter "github.com/hnw/go-smartmeter"
 	"github.com/tsuzu/hems-exporter/metrics"
@@ -22,15 +23,12 @@ func NewFetcher(device *smartmeter.Device, metrics metrics.Exporter) *Fetcher {
 	}
 }
 
-func (f *Fetcher) Run(ctx context.Context) (err error) {
-	defer func() {
-		if err != nil {
-			f.metrics.ReportFailure()
-		}
-	}()
-
+func (f *Fetcher) Prepare(ctx context.Context) error {
 	if f.device.Channel == "" {
-		err := f.device.Scan()
+		err := f.device.Scan(
+			// In my environment, it takes about 40~50 seconds to scan.
+			smartmeter.Timeout(60 * time.Second),
+		)
 		if err != nil {
 			return fmt.Errorf("failed to scan: %w", err)
 		}
@@ -43,6 +41,20 @@ func (f *Fetcher) Run(ctx context.Context) (err error) {
 		}
 
 		f.device.IPAddr = ipAddr
+	}
+
+	return nil
+}
+
+func (f *Fetcher) Run(ctx context.Context) (err error) {
+	defer func() {
+		if err != nil {
+			f.metrics.ReportFailure()
+		}
+	}()
+
+	if err := f.Prepare(ctx); err != nil {
+		return fmt.Errorf("failed to prepare: %w", err)
 	}
 
 	request := smartmeter.NewFrame(smartmeter.LvSmartElectricEnergyMeter, smartmeter.Get, []*smartmeter.Property{

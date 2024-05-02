@@ -82,25 +82,37 @@ func main() {
 	// BUG: Close() is not supported on smartmeter.Device
 
 	exporter := metrics.NewExporter()
-	http.Handle("/metrics", exporter)
-
-	go http.ListenAndServe(":"+port, nil)
-
 	fetcher := fetcher.NewFetcher(sm, exporter)
+
+	for {
+		err := fetcher.Prepare(context.Background())
+
+		if err == nil {
+			break
+		}
+
+		slog.Error("failed to prepare", "error", err)
+	}
+
+	http.Handle("/metrics", exporter)
+	go http.ListenAndServe(":"+port, nil)
 
 	slog.Info("smartmeter is opened")
 
-	ticker := time.NewTicker(interval)
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
 	for {
+		if err := fetcher.Run(ctx); err != nil {
+			slog.Error("failed to fetch", "error", err)
+		}
+
+		timer := time.NewTimer(interval)
 		select {
-		case <-ticker.C:
-			if err := fetcher.Run(ctx); err != nil {
-				slog.Error("failed to fetch", "error", err)
-			}
+		case <-timer.C:
 		case <-ctx.Done():
+			timer.Stop()
+
 			slog.Info("shutting down")
 			return
 		}
