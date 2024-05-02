@@ -59,6 +59,10 @@ func NewExporter() Exporter {
 		collectors.NewGoCollector(),
 		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
 		powerConsumption,
+		rCurrent,
+		tCurrent,
+		total,
+		successful,
 	)
 
 	handler := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
