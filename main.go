@@ -68,6 +68,8 @@ func main() {
 
 	slog.SetDefault(logger)
 
+	logger.Info("initializing")
+
 	sm, err := smartmeter.Open(
 		device,
 		smartmeter.ID(bRouteID),
