@@ -1,6 +1,52 @@
 {
-    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-    "extends": [
-      "local>miscord-dev/.github:renovate-config"
-    ]
-  }
+  "$schema": "https://docs.renovatebot.com/renovation-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "timezone": "Asia/Tokyo",
+  "prHourlyLimit": 4,
+  "prConcurrentLimit": 10,
+  "vulnerabilityAlerts": {
+    "labels": [
+      "vulnerability"
+    ],
+    "groupName": "vulnerability alerts"
+  },
+  "osvVulnerabilityAlerts": true,
+  "packageRules": [
+    {
+      "description": "Automerge patch/minor (verified by daily Muse check; CI must be green)",
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    },
+    {
+      "description": "Major updates are always manual review",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false,
+      "labels": [
+        "major-update"
+      ]
+    },
+    {
+      "description": "GoReleaser / goreleaser-action major updates are manual (release pipeline impact)",
+      "matchPackageNames": [
+        "/goreleaser/"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false,
+      "labels": [
+        "major-update",
+        "release-pipeline"
+      ]
+    }
+  ]
+}
